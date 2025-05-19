@@ -1,8 +1,10 @@
+const { nodeResolve } = require("@rollup/plugin-node-resolve");
+const commonjs = require("@rollup/plugin-commonjs");
 const typescript = require("@rollup/plugin-typescript");
 module.exports = {
     input: "src/server.ts",
     output: {
-        file: "dist/css-lsp-server.js",
+        file: "../vue-property-decorator-extension/server/css-lsp-server.js",
         format: "cjs",
         sourcemap: true,
     },
@@ -13,5 +15,9 @@ module.exports = {
             sourceMap: true, // 启用 sourcemap
             inlineSources: false,
         }),
+        nodeResolve({
+            preferBuiltins: false,
+        }),
+        commonjs(),
     ],
 };
