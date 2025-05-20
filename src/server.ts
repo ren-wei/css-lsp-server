@@ -3,11 +3,9 @@ import {
     TextDocuments,
     ProposedFeatures,
     InitializeParams,
-    DidChangeConfigurationNotification,
     TextDocumentSyncKind,
     InitializeResult,
     DocumentDiagnosticReportKind,
-    type DocumentDiagnosticReport,
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
@@ -20,6 +18,22 @@ import {
     doValidateCss,
     openCssTextdocument,
 } from "./css";
+import {
+    changeScssTextdocument,
+    closeScssTextdocument,
+    doCompleteOnScss,
+    doHoverOnScss,
+    doValidateScss,
+    openScssTextdocument,
+} from "./scss";
+import {
+    changeLessTextdocument,
+    closeLessTextdocument,
+    doCompleteOnLess,
+    doHoverOnLess,
+    doValidateLess,
+    openLessTextdocument,
+} from "./less";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -64,22 +78,32 @@ connection.languages.diagnostics.on(async (params) => {
         return {
             kind: DocumentDiagnosticReportKind.Full,
             items: doValidateCss(document),
-        } satisfies DocumentDiagnosticReport;
+        };
+    } else if (document?.languageId === "scss") {
+        return {
+            kind: DocumentDiagnosticReportKind.Full,
+            items: doValidateScss(document),
+        };
+    } else if (document?.languageId === "less") {
+        return {
+            kind: DocumentDiagnosticReportKind.Full,
+            items: doValidateLess(document),
+        };
     } else {
         return {
             kind: DocumentDiagnosticReportKind.Full,
             items: [],
-        } satisfies DocumentDiagnosticReport;
+        };
     }
-});
-
-connection.onDidChangeWatchedFiles((_change) => {
-    connection.console.log("We received a file change event");
 });
 
 documents.onDidOpen((params) => {
     if (params.document.languageId === "css") {
         openCssTextdocument(params.document);
+    } else if (params.document.languageId === "scss") {
+        openScssTextdocument(params.document);
+    } else if (params.document.languageId === "less") {
+        openLessTextdocument(params.document);
     }
 });
 
@@ -94,12 +118,32 @@ documents.onDidChangeContent((change) => {
             version: change.document.version,
             diagnostics: diags,
         });
+    } else if (change.document.languageId === "scss") {
+        changeScssTextdocument(change.document);
+        const diags = doValidateScss(change.document);
+        connection.sendDiagnostics({
+            uri: change.document.uri,
+            version: change.document.version,
+            diagnostics: diags,
+        });
+    } else if (change.document.languageId === "less") {
+        changeLessTextdocument(change.document);
+        const diags = doValidateLess(change.document);
+        connection.sendDiagnostics({
+            uri: change.document.uri,
+            version: change.document.version,
+            diagnostics: diags,
+        });
     }
 });
 
 documents.onDidClose((params) => {
     if (params.document.languageId === "css") {
         closeCssTextdocument(params.document);
+    } else if (params.document.languageId === "scss") {
+        closeScssTextdocument(params.document);
+    } else if (params.document.languageId === "less") {
+        closeLessTextdocument(params.document);
     }
 });
 
@@ -107,6 +151,10 @@ connection.onHover((params) => {
     const document = documents.get(params.textDocument.uri)!;
     if (document.languageId === "css") {
         return doHoverOnCss(document, params.position);
+    } else if (document.languageId === "scss") {
+        return doHoverOnScss(document, params.position);
+    } else if (document.languageId === "less") {
+        return doHoverOnLess(document, params.position);
     }
     return null;
 });
@@ -115,6 +163,10 @@ connection.onCompletion((params) => {
     const document = documents.get(params.textDocument.uri)!;
     if (document.languageId === "css") {
         return doCompleteOnCss(document, params.position);
+    } else if (document.languageId === "scss") {
+        return doCompleteOnScss(document, params.position);
+    } else if (document.languageId === "less") {
+        return doCompleteOnLess(document, params.position);
     }
     return null;
 });
