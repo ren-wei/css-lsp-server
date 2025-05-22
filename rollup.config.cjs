@@ -4,7 +4,7 @@ const typescript = require("@rollup/plugin-typescript");
 module.exports = {
     input: "src/server.ts",
     output: {
-        file: "../vue-property-decorator-extension/server/css-lsp-server.js",
+        file: "dist/css-lsp-server.js",
         format: "cjs",
         sourcemap: true,
     },
